@@ -1,0 +1,4 @@
+*.o
+*.json
+riscv
+try
