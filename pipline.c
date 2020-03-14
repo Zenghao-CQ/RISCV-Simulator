@@ -147,7 +147,7 @@ int decode_excute(INSTR inst)
             }
             else
             {
-                printf("\t!!!ERROR CODE in opcode_i,func3=5\n");
+                printf("\t!!!ERROR CODE in opcode_i,func3=5,func7=%x\n",func7);
                 return -1;
             }            
         }
@@ -178,7 +178,7 @@ int decode_excute(INSTR inst)
         int rs1 = get_rs1(inst);
         int imm = get_imm_i(inst);
         //set PC
-        PC_NEXT = (rs1 + imm)&0xfffffffe;
+        PC_NEXT = (regs[rs1] + imm)&0xfffffffe;
         //set rd
         ctrl_wb_REG = true;
         wb_REG_No = rd;
@@ -220,6 +220,54 @@ int decode_excute(INSTR inst)
         //ctrl_BUBBLE_DI = true;
         //ctrl_BUBBLE_WB = true;
         printf("\tjal %s,%x\n",regnames[rd],PC_NEXT);//!!not val in dump
+    }
+    else if(opcode == OPCODE_SB)
+    {
+        int func3 = get_funct3(inst);
+        int rs1 = get_rs1(inst);
+        int rs2 = get_rs2(inst);
+        int off = get_imm_sb(inst);
+        if(func3 == 0X0)//beq
+        {
+            if(regs[rs1] == regs[rs2])
+                PC_NEXT = off + PC - 4;
+            printf("\tbeq %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+        }
+        else if(func3 == 0X1)//bne
+        {
+            if(regs[rs1] != regs[rs2])
+                PC_NEXT = off + PC - 4;
+            printf("\tbne %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+        }
+        else if(func3 == 0X4)//blt
+        {
+            if(regs[rs1] < regs[rs2])
+                PC_NEXT = off + PC - 4;
+            printf("\tblt %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+        }
+        else if(func3 == 0X5)//bge
+        {
+            if(regs[rs1] >= regs[rs2])
+                PC_NEXT = off + PC - 4;
+            printf("\tbge %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+        }
+        else if(func3 == 0X6)//bltu
+        {
+            if((uint64_t)(regs[rs1]) < (uint64_t)(regs[rs2]))
+                PC_NEXT = off + PC - 4;
+            printf("\tbltu %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+        }
+        else if(func3 == 0X7)//bgeu
+        {
+            if((uint64_t)(regs[rs1]) >= (uint64_t)(regs[rs2]))
+                PC_NEXT = off + PC - 4;
+            printf("\tbltu %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+        }
+        else
+        {
+            printf("\t!!!ERROR CODE in opcode_sb,func3=%x\n",func3);
+            return -1;
+        }
     }
     
     
