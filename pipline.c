@@ -78,7 +78,7 @@ int decode_excute(INSTR inst)
     //}
     printf("###code: %x\n",inst);
     INSTR opcode = get_opcode(inst);
-    //printf("\topcode: %x",opcode);
+    printf("\topcode: 0x%x",opcode);
     if(opcode == OPCODE_I_2)//0x13
     {
         int func3 = get_funct3(inst);
@@ -206,7 +206,7 @@ int decode_excute(INSTR inst)
         wb_REG_val = off;
         printf("\tlui %s,%x\n",regnames[rd],off>>12);
     }
-    else if(opcode = OPCODE_UJ)//jal !!brach wrong bubble
+    else if(opcode == OPCODE_UJ)//jal !!brach wrong bubble
     {
         int rd = get_rd(inst);
         int imm = get_imm_uj(inst);
@@ -231,37 +231,37 @@ int decode_excute(INSTR inst)
         {
             if(regs[rs1] == regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tbeq %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+            printf("\tbeq %s,%s,%d",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X1)//bne
         {
             if(regs[rs1] != regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tbne %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+            printf("\tbne %s,%s,%d",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X4)//blt
         {
             if(regs[rs1] < regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tblt %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+            printf("\tblt %s,%s,%d",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X5)//bge
         {
             if(regs[rs1] >= regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tbge %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+            printf("\tbge %s,%s,%d",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X6)//bltu
         {
             if((uint64_t)(regs[rs1]) < (uint64_t)(regs[rs2]))
                 PC_NEXT = off + PC - 4;
-            printf("\tbltu %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+            printf("\tbltu %s,%s,%d",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X7)//bgeu
         {
             if((uint64_t)(regs[rs1]) >= (uint64_t)(regs[rs2]))
                 PC_NEXT = off + PC - 4;
-            printf("\tbltu %s,%s,imm",regnames[rs1],regnames[rs2],off + PC - 4);
+            printf("\tbltu %s,%s,%d",regnames[rs1],regnames[rs2],off);
         }
         else
         {
