@@ -12,8 +12,8 @@ extern INSTR IR;
 /***contrl***/
 extern bool ctrl_wb_REG;//if write back reg file
 extern bool ctrl_wb_MEM;//if write back memory
-extern bool ctrl_DI_BUBBLE;//if branch predict is wrong, in di
-extern bool ctrl_WB_BUBBLE;//if branch predict is wrong, in wb
+extern bool ctrl_BUBBLE_DI;//if branch predict is wrong, in di
+extern bool ctrl_BUBBLE_WB;//if branch predict is wrong, in wb
 extern int wb_REG_No;
 extern int wb_MEM_off;
 REG wb_REG_val;

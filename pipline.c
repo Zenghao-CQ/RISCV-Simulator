@@ -28,8 +28,8 @@ void init()
     ctrl_wb_MEM = false;
     ctrl_wb_REG = false;
     //!!this is importent cause in 1st cycle pipline is empty
-    ctrl_BUBBLE_DI = true;
-    ctrl_BUBBLE_WB = true;
+    //ctrl_BUBBLE_DI = true;
+    //ctrl_BUBBLE_WB = true;
 }
 int load_memory(char * filename)
 {
@@ -70,6 +70,12 @@ int fetch_instr(int PC)//addr of bytes
 }
 int decode_excute(INSTR inst)
 {
+    //if(ctrl_BUBBLE_DI == true)
+    //{
+    //    ctrl_BUBBLE_DI = false;
+    //    ctrl_BUBBLE_WB = true;//!!import
+    //    return -2;//mean last instr is jump
+    //}
     printf("###code: %x\n",inst);
     INSTR opcode = get_opcode(inst);
     //printf("\topcode: %x",opcode);
@@ -163,12 +169,63 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG = true;
             wb_REG_No = rd;
             wb_REG_val = regs[rs1] & imm;
-            printf("\tori %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+            printf("\tandi %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
     }//endif op 0x13
+    else if(opcode == OPCODE_I_4)//jalr
+    {
+        int rd = get_rd(inst);
+        int rs1 = get_rs1(inst);
+        int imm = get_imm_i(inst);
+        //set PC
+        PC_NEXT = (rs1 + imm)&0xfffffffe;
+        //set rd
+        ctrl_wb_REG = true;
+        wb_REG_No = rd;
+        wb_REG_val = PC;//!!!when decode PC point to next instrct
+        //bubble
+        //ctrl_BUBBLE_DI = true;
+        //ctrl_BUBBLE_WB = true;
+        printf("\tjalr %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+    }
+    else if(opcode == OPCODE_U_1)//auipc
+    {
+        int rd = get_rd(inst);
+        int off = get_imm_u(inst);
+        ctrl_wb_REG = true;
+        wb_REG_No = rd;
+        wb_REG_val = PC - 4 + off;//its not right,next PC is =4? no jump
+        printf("\tauipc %s,%x\n",regnames[rd],off>>12);
+    }
+    else if(opcode ==  OPCODE_U_2)//LUI
+    {
+        int rd = get_rd(inst);
+        int off = get_imm_u(inst);
+        ctrl_wb_REG = true;
+        wb_REG_No = rd;
+        wb_REG_val = off;
+        printf("\tlui %s,%x\n",regnames[rd],off>>12);
+    }
+    else if(opcode = OPCODE_UJ)//jal !!brach wrong bubble
+    {
+        int rd = get_rd(inst);
+        int imm = get_imm_uj(inst);
+        //set PC
+        PC_NEXT = PC - 4 + imm;//!!!when decode PC point to next instrct
+        //set rd
+        ctrl_wb_REG = true;
+        wb_REG_No = rd;
+        wb_REG_val = PC;//!!!when decode PC point to next instrct
+        //bubble
+        //ctrl_BUBBLE_DI = true;
+        //ctrl_BUBBLE_WB = true;
+        printf("\tjal %s,%x\n",regnames[rd],PC_NEXT);//!!not val in dump
+    }
+    
+    
     else
     {
-        printf("###kunown instruct:%x",inst);
+        printf("###kunown instruct:%8x",inst);
         return -1;
     }    
     return 0;
