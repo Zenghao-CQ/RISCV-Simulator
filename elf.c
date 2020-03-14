@@ -1432,7 +1432,7 @@ int read_elf( char * filename )
                     if(strcmp(entry_name_zh,"main")==0)
                     {
                         madr = (unsigned int)ELF64_SymbolTableEntryGetSymbolValue( sym );//main函数在内存中地址
-                        endmain = madr + (unsigned int)ELF64_SymbolTableEntryGetObjectSize( sym );
+                        endmain = madr + (unsigned int)ELF64_SymbolTableEntryGetObjectSize( sym ) - 3;
                     }
                     if(strcmp(entry_name_zh,"atexit")==0)
                         endPC = (unsigned int)ELF64_SymbolTableEntryGetSymbolValue( sym);////程序结束时的PC
@@ -1453,8 +1453,9 @@ int read_elf( char * filename )
         
     free( data );
     fclose( fh );
-    printf("code: 0x%x %u 0x%x\n", code_adr, code_size, code_vadr);
-    printf("data: 0x%x %u 0x%x\n", data_adr, data_size, data_vadr);
+    printf("\n###read elf success\n");
+    printf("code segment: (addr)0x%x (size)%u (vaddr)0x%x\n", code_adr, code_size, code_vadr);
+    printf("data segment: (addr)0x%x (size)%u (vaddr)0x%x\n", data_adr, data_size, data_vadr);
     printf("main: 0x%x 0x%x\n", madr, endmain);
     printf("PC:   0x%x 0x%x\n", entry, endPC);
     printf("gp:  0x%llx\n",gp);

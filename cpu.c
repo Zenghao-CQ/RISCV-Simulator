@@ -49,7 +49,7 @@ INSTR get_imm_sb(INSTR x)
 
 INSTR get_imm_uj(INSTR x)
 {
-    INSTR imm20 = x >> 31;
+    INSTR imm20 = x >> 31;//with sign
     INSTR imm19_12 = (x >> 12) & 0x0FF;
     INSTR imm20_12 = (imm20 << 8) | imm19_12;
     INSTR imm11 = (x >> 20) & 0x1;

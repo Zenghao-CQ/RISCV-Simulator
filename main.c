@@ -8,7 +8,7 @@
 */
 void print_main_code()
 {
-    for(int addr = madr;addr < endmain; addr+=4)
+    for(int addr = madr;addr <= endmain; addr+=4)
     {
         if(fetch_instr(addr)!=0)
         {
@@ -22,6 +22,13 @@ void print_main_code()
 */
 int main()
 {
-    load_memory("./add");
-    print_main_code();
+    //load_memory("./add");
+    //print_main_code();
+    INSTR tmp;
+    while (1)
+    {
+       scanf("%x",&tmp);
+       decode_excute(tmp);
+    }
+    
 }

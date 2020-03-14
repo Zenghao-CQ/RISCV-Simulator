@@ -1,7 +1,12 @@
 #include<stdio.h>
+#include<stdint.h>
 int main()
 {
-    char a[4]= {0x1,0x2,0x3,0x4};
-    int x = *((int*) a);
-    printf("%x",x);
+    uint64_t a = 0xffffffff;
+    uint64_t x = a>>8;
+    int64_t tmp = (int64_t)a;
+    a = a>>8;
+    uint64_t y = (uint64_t)tmp;
+    printf("%lu\n",sizeof(a));
+    printf("%lx\n%lx\n",x,y);
 }

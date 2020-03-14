@@ -7,7 +7,7 @@
 #include<stdbool.h>
 
 /***data struct***/
-//OPcdoe
+//OPcdoe and func
 #define OPCODE_R 0x33 //R
 #define OPCODE_I_1 0x03 //I
 #define OPCODE_I_2 0x13
