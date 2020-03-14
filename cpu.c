@@ -1,12 +1,15 @@
 #include "cpu.h"
 
 /***data struct***/
-//hardware
-int PC;
-int PC_NEXT;
-extern INSTR IR;
 //registers
 REG regs[REG_NUM];
+//debug 
+bool bug_flag;
+char regnames[32][5] = {"zero","ra","sp","gp","tp","t0","t1","t2",
+						"s0","s1","a0","a1","a2","a3","a4","a5",
+						"a6","a7","s2","s3","s4","s5","s6","s7",
+						"s8","s9","s10","s11","t3","t4","t5","t6"};
+
 //memorys
 unsigned char memory[MEM_SIZE];
 
@@ -55,4 +58,11 @@ INSTR get_imm_uj(INSTR x)
     INSTR imm20_1 = (imm20_11 << 10) | imm10_1;
     INSTR imm20_0 = imm20_1 << 1;
     return imm20_0;
+}
+void DEBUG(const char* str)
+{
+	if(bug_flag == true)
+	{
+		printf("***DEBUG: %s\n",str);
+	}
 }

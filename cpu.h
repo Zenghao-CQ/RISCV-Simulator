@@ -3,6 +3,8 @@
 
 #include<stdio.h>
 #include<stdlib.h>
+#include<stdint.h>
+#include<stdbool.h>
 
 /***data struct***/
 //OPcdoe
@@ -20,15 +22,13 @@
 
 //register
 #define REG_NUM 32 
-typedef __int32_t INSTR;//!!imm need sign extend
-typedef __uint64_t REG;
+typedef int32_t INSTR;//!!imm need sign extend
+typedef uint64_t REG;
 extern REG regs[REG_NUM];//all register but xo
-char regnames[32][5] = {"zero","ra","sp","gp","tp","t0","t1","t2",
-						"s0","s1","a0","a1","a2","a3","a4","a5",
-						"a6","a7","s2","s3","s4","s5","s6","s7",
-						"s8","s9","s10","s11","t3","t4","t5","t6"};
+extern char regnames[32][5];
+
 //memory
-#define MEM_SIZE 1024*1024//1M
+#define MEM_SIZE 100000000
 extern unsigned char memory[MEM_SIZE];
 
 /***instruction decode***/
@@ -45,9 +45,8 @@ extern INSTR get_imm_sb(INSTR x); //sifn extend
 #define get_imm_u(x) ((x>>12)<<12) 
 extern INSTR get_imm_uj(INSTR x);
 
-//hard ware
-extern unsigned int PC;
-extern unsigned int PC_NEXT;
-extern INSTR IR;
+//debung
+extern bool bug_flag;
+extern void DEBUG(const char* str);
 
-#endif //CPU
+#endif//CPU
