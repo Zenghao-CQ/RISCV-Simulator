@@ -27,8 +27,8 @@ int main()
     INSTR tmp;
     while (1)
     {
-       scanf("%x",&tmp);
-       decode_excute(tmp);
+        scanf("%x",&tmp);
+        decode_excute(tmp);
     }
     
 }

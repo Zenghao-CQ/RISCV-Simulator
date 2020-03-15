@@ -17,6 +17,23 @@ REG wb_MEM_val;
 bool ctrl_BUBBLE_DI;//if branch predict is wrong
 bool ctrl_BUBBLE_WB;//if branch predict is wrong
 
+/***load memrory***/
+int8_t get_byte(int addr)
+{
+    return (int8_t)memory[addr];
+}
+int16_t get_half(int addr)
+{
+    return *((int16_t *) (&memory[addr]));
+}
+int32_t get_word(int addr)
+{
+    return *((int32_t *) (&memory[addr]));
+}
+int64_t get_aouble(int addr)
+{
+    return *((int64_t *) (&memory[addr]));
+}
 /***exculte part***/
 void init()
 {
@@ -76,10 +93,56 @@ int decode_excute(INSTR inst)
     //    ctrl_BUBBLE_WB = true;//!!import
     //    return -2;//mean last instr is jump
     //}
-    printf("###code: %x\n",inst);
+    printf("instruct: 0x%08x\n",inst);
     INSTR opcode = get_opcode(inst);
     printf("\topcode: 0x%x",opcode);
-    if(opcode == OPCODE_I_2)//0x13
+
+    if(opcode == OPCODE_I_1)//load memry
+    {
+        int rd = get_rd(inst);
+        int rs1 = get_rs1(inst);
+        int off = get_imm_i(inst);
+        int addr = regs[rs1] + off;
+        int func3 = get_funct3(inst);
+        if(func3 == 0)//lb
+        {
+            int8_t val = get_byte(addr);//get byte
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = val;//!!sign extend!!
+            printf("\tlb %s,%s,%d\n",regnames[rd],regnames[rs1],off);
+        }   
+        else if(func3 == 1)//lh
+        {
+            int16_t val = get_half(addr);
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = val;//!!sign extend!!
+            printf("\tlh %s,%s,%d\n",regnames[rd],regnames[rs1],off);
+        }
+        else if(func3 == 2)//lw
+        {
+            int16_t val = get_word(addr);
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = val;//!!sign extend!!
+            printf("\tlw %s,%s,%d\n",regnames[rd],regnames[rs1],off);
+        }
+        else if(func3 == 3)//ld
+        {
+            int16_t val = get_word(addr);
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = val;//!!sign extend!!
+            printf("\tld %s,%s,%d\n",regnames[rd],regnames[rs1],off);
+        }
+        else
+        {
+            printf("\t!!!ERROR CODE in load,func3=0x%x\n",func3);
+            return -1;
+        }
+    }
+    else if(opcode == OPCODE_I_2)//0x13
     {
         int func3 = get_funct3(inst);
         if(func3 == 0x0)//addi
@@ -147,7 +210,7 @@ int decode_excute(INSTR inst)
             }
             else
             {
-                printf("\t!!!ERROR CODE in opcode_i,func3=5,func7=%x\n",func7);
+                printf("\t!!!ERROR CODE in opcode_i,func3=5,func7=0x%x\n",func7);
                 return -1;
             }            
         }
@@ -195,7 +258,7 @@ int decode_excute(INSTR inst)
         ctrl_wb_REG = true;
         wb_REG_No = rd;
         wb_REG_val = PC - 4 + off;//its not right,next PC is =4? no jump
-        printf("\tauipc %s,%x\n",regnames[rd],off>>12);
+        printf("\tauipc %s,0x%x\n",regnames[rd],off>>12);
     }
     else if(opcode ==  OPCODE_U_2)//LUI
     {
@@ -204,7 +267,7 @@ int decode_excute(INSTR inst)
         ctrl_wb_REG = true;
         wb_REG_No = rd;
         wb_REG_val = off;
-        printf("\tlui %s,%x\n",regnames[rd],off>>12);
+        printf("\tlui %s,0x%x\n",regnames[rd],off>>12);
     }
     else if(opcode == OPCODE_UJ)//jal !!brach wrong bubble
     {
@@ -219,7 +282,7 @@ int decode_excute(INSTR inst)
         //bubble
         //ctrl_BUBBLE_DI = true;
         //ctrl_BUBBLE_WB = true;
-        printf("\tjal %s,%x\n",regnames[rd],PC_NEXT);//!!not val in dump
+        printf("\tjal %s,0x%x\n",regnames[rd],PC_NEXT);//!!not val in dump
     }
     else if(opcode == OPCODE_SB)
     {
@@ -231,41 +294,41 @@ int decode_excute(INSTR inst)
         {
             if(regs[rs1] == regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tbeq %s,%s,%d",regnames[rs1],regnames[rs2],off);
+            printf("\tbeq %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X1)//bne
         {
             if(regs[rs1] != regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tbne %s,%s,%d",regnames[rs1],regnames[rs2],off);
+            printf("\tbne %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X4)//blt
         {
             if(regs[rs1] < regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tblt %s,%s,%d",regnames[rs1],regnames[rs2],off);
+            printf("\tblt %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X5)//bge
         {
             if(regs[rs1] >= regs[rs2])
                 PC_NEXT = off + PC - 4;
-            printf("\tbge %s,%s,%d",regnames[rs1],regnames[rs2],off);
+            printf("\tbge %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X6)//bltu
         {
             if((uint64_t)(regs[rs1]) < (uint64_t)(regs[rs2]))
                 PC_NEXT = off + PC - 4;
-            printf("\tbltu %s,%s,%d",regnames[rs1],regnames[rs2],off);
+            printf("\tbltu %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X7)//bgeu
         {
             if((uint64_t)(regs[rs1]) >= (uint64_t)(regs[rs2]))
                 PC_NEXT = off + PC - 4;
-            printf("\tbltu %s,%s,%d",regnames[rs1],regnames[rs2],off);
+            printf("\tbltu %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else
         {
-            printf("\t!!!ERROR CODE in opcode_sb,func3=%x\n",func3);
+            printf("\t!!!ERROR CODE in opcode_sb,func3=0x%x\n",func3);
             return -1;
         }
     }
@@ -273,7 +336,7 @@ int decode_excute(INSTR inst)
     
     else
     {
-        printf("###kunown instruct:%8x",inst);
+        printf("\nERROR: unknown opcode,unkown instruct:%08x\n",inst);
         return -1;
     }    
     return 0;
