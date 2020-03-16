@@ -124,7 +124,7 @@ int decode_excute(INSTR inst)
                 wb_REG_val = ans;
                 printf("\tadd %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
             }
-            if(func7 == 0x1)//mul
+            else if(func7 == 0x1)//mul
             {
                 int64_t ans = get_reg(rs1)*get_reg(rs2);//lower 64 bit
                 ctrl_wb_REG = true;
@@ -132,7 +132,7 @@ int decode_excute(INSTR inst)
                 wb_REG_val = ans;
                 printf("\tmul %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
             }
-            if(func7 == 0x20)//sub
+            else if(func7 == 0x20)//sub
             {
                 int64_t ans = get_reg(rs1)-get_reg(rs2);
                 ctrl_wb_REG = true;
@@ -192,9 +192,99 @@ int decode_excute(INSTR inst)
         }       
         else if(func3 == 0x4)
         {
-            /* code */
+            if(func7 == 0x0)//xor
+            {
+                int64_t ans = get_reg(rs1) ^ get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\txor %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else if(func7 == 0x1)//div
+            {
+                int64_t ans = get_reg(rs1) / get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tidv %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else
+            {
+                printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+                return -1;
+            }
         }
-        
+        else if(func3 == 0x5)
+        {
+            if(func7 == 0x0)//srl
+            {
+                uint64_t ans = (uint64_t)(get_reg(rs1));//logic shift
+                ans = ans >> get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_MEM_val = (int64_t)ans;
+                printf("\tsrl %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else if(func7 == 0x20)//sra
+            {
+                int64_t ans = get_reg(rs1);//albg shift
+                ans = ans >> get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_MEM_val = (int64_t)ans;
+                printf("\tsra %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else
+            {
+                printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+                return -1;
+            }
+        }
+        else if(func3 == 0x6)
+        {
+            if(func7 == 0x0)//or
+            {
+                int64_t ans = get_reg(rs1) | get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tor %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else if(func7 == 0x1)//rem
+            {
+                int64_t ans = get_reg(rs1) % get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\trem %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else
+            {
+                printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+                return -1;
+            }
+        }
+        else if(func3 == 0x7)
+        {
+            if(func7 == 0)
+            {
+                int64_t ans = get_reg(rs1) & get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tand %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else
+            {
+                printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+                return -1;
+            }
+        }
+        else
+        {
+            printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+            return -1;
+        }        
     }
     else if(opcode == OPCODE_I_1)//load memry
     {
