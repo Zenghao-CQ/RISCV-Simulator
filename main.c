@@ -14,7 +14,11 @@ void print_main_code()
         {
             printf("\n##Invalid PC at %x",addr);
         }
-        printf("%x: %8x\n",addr,IR);
+        else
+        {
+            printf("%x: %08x\n",addr,IR);
+            decode_excute(IR);
+        }
     }
 }
 /*
@@ -22,13 +26,6 @@ void print_main_code()
 */
 int main()
 {
-    //load_memory("./add");
-    //print_main_code();
-    INSTR tmp;
-    while (1)
-    {
-        scanf("%x",&tmp);
-        decode_excute(tmp);
-    }
-    
+    load_memory("./add");
+    print_main_code();    
 }
