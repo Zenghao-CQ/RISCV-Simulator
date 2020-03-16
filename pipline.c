@@ -1,5 +1,6 @@
 #include"pipline.h"
 #include"cpu.h"
+#include<string.h>
 
 /***hardware***/
 unsigned int PC;
@@ -69,6 +70,7 @@ int load_memory(char * filename)
         printf("\n###Out of memry size!\n");
         return -2;
     }
+    memset(memory,0,sizeof(memory));
     fseek(excu_file, code_adr, 0);
     fread(&memory[code_vadr],1,code_size,excu_file);//load code segment
 
@@ -105,7 +107,96 @@ int decode_excute(INSTR inst)
     INSTR opcode = get_opcode(inst);
     printf("\topcode: 0x%x",opcode);
 
-    if(opcode == OPCODE_I_1)//load memry
+    if(opcode == OPCODE_R)
+    {
+        int func3 = get_funct3(inst);
+        int rd = get_rd(inst);
+        int rs1 = get_rs1(inst);
+        int rs2 = get_rs2(inst);
+        int func7 = get_funct7(inst);
+        if(func3 == 0x0)//add
+        {
+            if(func7 == 0x0)
+            {
+                int64_t ans = get_reg(rs1)+get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tadd %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            if(func7 == 0x1)//mul
+            {
+                int64_t ans = get_reg(rs1)*get_reg(rs2);//lower 64 bit
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tmul %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            if(func7 == 0x20)//sub
+            {
+                int64_t ans = get_reg(rs1)-get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tsub %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else
+            {
+                printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+                return -1;
+            }            
+        }
+        else if(func3 == 0x1)
+        {
+            if(func7 == 0x0)//sll
+            {
+                int64_t ans = get_reg(rs1) << get_reg(rs2);
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tsll %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else if(func7 == 0x1)//mulh
+            {
+                int64_t val1 = get_reg(rs1);
+                int64_t val2 = get_reg(rs2);                 
+                int64_t ans = ((__int128_t)val1 * (__int128_t)val2) >> 64;
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tmulh %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            }
+            else
+            {
+                printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+                return -1;
+            }
+        }
+        else if(func3 == 0x2)
+        {
+            if(func7 == 0)//slt
+            {
+                int64_t ans = 0;
+                if(get_reg(rs1) < get_reg(rs2))
+                    ans = 1;
+                ctrl_wb_REG = true;
+                wb_REG_No = rd;
+                wb_REG_val = ans;
+                printf("\tslt %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);  
+            }
+            else
+            {
+                printf("\t!!!ERROR CODE in R,func3=0x%x,func7=0x%x\n",func3,func7);
+                return -1;
+            }
+        }       
+        else if(func3 == 0x4)
+        {
+            /* code */
+        }
+        
+    }
+    else if(opcode == OPCODE_I_1)//load memry
     {
         int rd = get_rd(inst);
         int rs1 = get_rs1(inst);
@@ -161,7 +252,7 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG =true;
             wb_REG_No = rd;
             wb_REG_val = get_reg(rs1) + imm;
-            printf("\taddi %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+            printf("\taddi %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x1)//slli
         {
@@ -171,7 +262,7 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG = true;
             wb_REG_No = rd;
             wb_REG_val = get_reg(rs1) << imm;
-            printf("\tslli %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+            printf("\tslli %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x2)//slti
         {
@@ -181,7 +272,7 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG = true;
             wb_REG_No = rd;
             wb_REG_val = (get_reg(rs1) < imm) ? 1 : 0;
-            printf("\tslti %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+            printf("\tslti %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x4)//xori
         {
@@ -191,7 +282,7 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG = true;
             wb_REG_No = rd;
             wb_REG_val = get_reg(rs1)^imm;
-            printf("\txori %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+            printf("\txori %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x5)//srli&srai
         {
@@ -232,7 +323,7 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG = true;
             wb_REG_No = rd;
             wb_REG_val = get_reg(rs1) | imm;
-            printf("\tori %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+            printf("\tori %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x7)//andi
         {
@@ -242,7 +333,7 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG = true;
             wb_REG_No = rd;
             wb_REG_val = get_reg(rs1) & imm;
-            printf("\tandi %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+            printf("\tandi %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
         }
     }//endif op 0x13
     else if(opcode == OPCODE_I_4)//jalr
@@ -268,9 +359,9 @@ int decode_excute(INSTR inst)
         ctrl_wb_REG = true;
         wb_REG_No = rd;
         wb_REG_val = (int64_t)PC - 4 + off;//its not right,next PC is =4? no jump
-        printf("\tauipc %s,0x%x\n",regnames[rd],off>>12);
+        printf("\tauipc %s,0x%lx\n",regnames[rd],off>>12);
     }
-    else if(opcode ==  OPCODE_U_2)//LUI
+    else if(opcode ==  OPCODE_U_2)//lui
     {
         int rd = get_rd(inst);
         int off = get_imm_u(inst);
@@ -292,7 +383,7 @@ int decode_excute(INSTR inst)
         //bubble
         //ctrl_BUBBLE_DI = true;
         //ctrl_BUBBLE_WB = true;
-        printf("\tjal %s,0x%x\n",regnames[rd],PC_NEXT);//!!not val in dump
+        printf("\tjal %s,%x:0x%x\n",regnames[rd],imm,PC_NEXT);//!!not val in dump
     }
     else if(opcode == OPCODE_S)//!!no sign extend
     {
@@ -307,7 +398,7 @@ int decode_excute(INSTR inst)
             wb_MEM_off = addr;
             wb_MEM_len = 1;
             wb_MEM_val = (uint64_t)(get_reg(rs2)&0xff);
-            printf("\tsb %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+            printf("\tsb %s,%d(%s):0x%lx",regnames[rs2],off,regnames[rs1],addr);
         }
         if(func3 == 1)//sh
         {
@@ -315,7 +406,7 @@ int decode_excute(INSTR inst)
             wb_MEM_off = addr;
             wb_MEM_len = 2;
             wb_MEM_val = (uint64_t)(get_reg(rs2)&0xffff);
-            printf("\tsh %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+            printf("\tsh %s,%d(%s):0x%lx",regnames[rs2],off,regnames[rs1],addr);
         }
         if(func3 == 2)//sw
         {
@@ -323,7 +414,7 @@ int decode_excute(INSTR inst)
             wb_MEM_off = addr;
             wb_MEM_len = 4;
             wb_MEM_val = (uint64_t)(get_reg(rs2)&0xffffffff);
-            printf("\tsw %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+            printf("\tsw %s,%d(%s):0x%lx",regnames[rs2],off,regnames[rs1],addr);
         }
         if(func3 == 3)//sd
         {
@@ -331,7 +422,7 @@ int decode_excute(INSTR inst)
             wb_MEM_off = addr;
             wb_MEM_len = 8;
             wb_MEM_val = (uint64_t)get_reg(rs2);
-            printf("\tsh %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+            printf("\tsh %s,%d(%s):0x%lx",regnames[rs2],off,regnames[rs1],addr);
         }
     }    
     else if(opcode == OPCODE_SB)
