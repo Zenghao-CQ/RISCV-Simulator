@@ -2,7 +2,7 @@
 
 /***data struct***/
 //registers
-REG regs[REG_NUM];
+int64_t regs[REG_NUM];
 //debug 
 bool bug_flag;
 char regnames[32][5] = {"zero","ra","sp","gp","tp","t0","t1","t2",

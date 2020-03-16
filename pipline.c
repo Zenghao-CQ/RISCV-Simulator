@@ -12,12 +12,13 @@ bool ctrl_wb_REG;//if write back reg file,
 bool ctrl_wb_MEM;//if write back memory
 int wb_REG_No;
 int wb_MEM_off;
-REG wb_REG_val;//uint64_t
-REG wb_MEM_val;
+int wb_MEM_len;//bytes length
+int64_t wb_REG_val;//uint64_t
+uint64_t wb_MEM_val;
 bool ctrl_BUBBLE_DI;//if branch predict is wrong
 bool ctrl_BUBBLE_WB;//if branch predict is wrong
 
-/***load memrory***/
+/***load memrory\reg***/
 int8_t get_byte(int addr)
 {
     return (int8_t)memory[addr];
@@ -30,9 +31,16 @@ int32_t get_word(int addr)
 {
     return *((int32_t *) (&memory[addr]));
 }
-int64_t get_aouble(int addr)
+int64_t get_double(int addr)
 {
     return *((int64_t *) (&memory[addr]));
+}
+int64_t get_reg(int no)
+{
+    if(no = 0)
+        return 0;
+    else
+        return regs[no];
 }
 /***exculte part***/
 void init()
@@ -102,14 +110,14 @@ int decode_excute(INSTR inst)
         int rd = get_rd(inst);
         int rs1 = get_rs1(inst);
         int off = get_imm_i(inst);
-        int addr = regs[rs1] + off;
+        int64_t addr = get_reg(rs1) + off;
         int func3 = get_funct3(inst);
         if(func3 == 0)//lb
         {
             int8_t val = get_byte(addr);//get byte
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = val;//!!sign extend!!
+            wb_REG_val = (int64_t)val;//!!sign extend!!
             printf("\tlb %s,%s,%d\n",regnames[rd],regnames[rs1],off);
         }   
         else if(func3 == 1)//lh
@@ -117,23 +125,23 @@ int decode_excute(INSTR inst)
             int16_t val = get_half(addr);
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = val;//!!sign extend!!
+            wb_REG_val = (int64_t)val;//!!sign extend!!
             printf("\tlh %s,%s,%d\n",regnames[rd],regnames[rs1],off);
         }
         else if(func3 == 2)//lw
         {
-            int16_t val = get_word(addr);
+            int32_t val = get_word(addr);
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = val;//!!sign extend!!
+            wb_REG_val = (int64_t)val;//!!sign extend!!
             printf("\tlw %s,%s,%d\n",regnames[rd],regnames[rs1],off);
         }
         else if(func3 == 3)//ld
         {
-            int16_t val = get_word(addr);
+            int64_t val = get_double(addr);
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = val;//!!sign extend!!
+            wb_REG_val = (int64_t)val;//!!sign extend!!
             printf("\tld %s,%s,%d\n",regnames[rd],regnames[rs1],off);
         }
         else
@@ -149,40 +157,40 @@ int decode_excute(INSTR inst)
         {
             int rd = get_rd(inst);
             int rs1 = get_rs1(inst);
-            int imm = get_imm_i(inst);
+            int64_t imm = get_imm_i(inst);//sign extend
             ctrl_wb_REG =true;
             wb_REG_No = rd;
-            wb_REG_val = regs[rs1]+imm;
+            wb_REG_val = get_reg(rs1) + imm;
             printf("\taddi %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x1)//slli
         {
             int rd = get_rd(inst);
             int rs1 = get_rs1(inst);
-            int imm = get_imm_i(inst)&0x1f;//lower 5 bit
+            int64_t imm = get_imm_i(inst)&0x1f;//lower 5 bit
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = regs[rs1]<<imm;
+            wb_REG_val = get_reg(rs1) << imm;
             printf("\tslli %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x2)//slti
         {
             int rd = get_rd(inst);
             int rs1 = get_rs1(inst);
-            int imm = get_imm_i(inst);
+            int64_t imm = get_imm_i(inst);
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = (regs[rs1]<imm) ? 1:0;
+            wb_REG_val = (get_reg(rs1) < imm) ? 1 : 0;
             printf("\tslti %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x4)//xori
         {
             int rd = get_rd(inst);
             int rs1 = get_rs1(inst);
-            int imm = get_imm_i(inst);
+            int64_t imm = (int64_t) (get_imm_i(inst));//sign extend
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = regs[rs1]^imm;
+            wb_REG_val = get_reg(rs1)^imm;
             printf("\txori %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x5)//srli&srai
@@ -192,20 +200,22 @@ int decode_excute(INSTR inst)
             int rs1 = get_rs1(inst);
             int imm = get_imm_i(inst)&0x1f;//lower 5 bit
             int func7 = get_funct7(inst);
-            if(func7 = 0x0)//srli 0 
+            if(func7 = 0x0)//srli 0 !!nosign
             {
                 ctrl_wb_REG = true;
                 wb_REG_No = rd;
-                wb_REG_val = regs[rs1]>>imm;
+                uint64_t tmp = (uint64_t)(get_reg(rs1));//logic shift
+                tmp = tmp >> imm;
+                wb_REG_val = (int64_t)tmp;
                 printf("\tsrli %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
             }
             else if(func7 == 0x10)//srai 0|1
             {
                 ctrl_wb_REG = true;
                 wb_REG_No = rd;
-                int64_t tmp = (int64_t)regs[rs1];
+                int64_t tmp = (int64_t)(get_reg(rs1));//alg shift
                 tmp = tmp >> imm;
-                wb_REG_val = (REG)tmp;
+                wb_REG_val = (int64_t)tmp;
                 printf("\tsrai %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
             }
             else
@@ -218,20 +228,20 @@ int decode_excute(INSTR inst)
         {
             int rd = get_rd(inst);
             int rs1 = get_rs1(inst);
-            int imm = get_imm_i(inst);
+            int64_t imm = (int64_t)(get_imm_i(inst));
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = regs[rs1] | imm;
+            wb_REG_val = get_reg(rs1) | imm;
             printf("\tori %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
         else if(func3 == 0x7)//andi
         {
             int rd = get_rd(inst);
             int rs1 = get_rs1(inst);
-            int imm = get_imm_i(inst);
+            int64_t imm = (int64_t)(get_imm_i(inst));
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = regs[rs1] & imm;
+            wb_REG_val = get_reg(rs1) & imm;
             printf("\tandi %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
     }//endif op 0x13
@@ -241,7 +251,7 @@ int decode_excute(INSTR inst)
         int rs1 = get_rs1(inst);
         int imm = get_imm_i(inst);
         //set PC
-        PC_NEXT = (regs[rs1] + imm)&0xfffffffe;
+        PC_NEXT = (get_reg(rs1) + imm)&0xfffffffe;
         //set rd
         ctrl_wb_REG = true;
         wb_REG_No = rd;
@@ -254,10 +264,10 @@ int decode_excute(INSTR inst)
     else if(opcode == OPCODE_U_1)//auipc
     {
         int rd = get_rd(inst);
-        int off = get_imm_u(inst);
+        int64_t off = get_imm_u(inst);
         ctrl_wb_REG = true;
         wb_REG_No = rd;
-        wb_REG_val = PC - 4 + off;//its not right,next PC is =4? no jump
+        wb_REG_val = (int64_t)PC - 4 + off;//its not right,next PC is =4? no jump
         printf("\tauipc %s,0x%x\n",regnames[rd],off>>12);
     }
     else if(opcode ==  OPCODE_U_2)//LUI
@@ -272,7 +282,7 @@ int decode_excute(INSTR inst)
     else if(opcode == OPCODE_UJ)//jal !!brach wrong bubble
     {
         int rd = get_rd(inst);
-        int imm = get_imm_uj(inst);
+        int imm = (int64_t)get_imm_uj(inst);
         //set PC
         PC_NEXT = PC - 4 + imm;//!!!when decode PC point to next instrct
         //set rd
@@ -284,6 +294,46 @@ int decode_excute(INSTR inst)
         //ctrl_BUBBLE_WB = true;
         printf("\tjal %s,0x%x\n",regnames[rd],PC_NEXT);//!!not val in dump
     }
+    else if(opcode == OPCODE_S)//!!no sign extend
+    {
+        int rs1 = get_rs1(inst);
+        int rs2 = get_rs2(inst);
+        int off = get_imm_s(inst);//!!sign extend
+        int64_t addr = get_reg(rs1) + off;
+        int func3 = get_funct3(inst);
+        if(func3 == 0)//sb
+        {
+            ctrl_wb_MEM = true;
+            wb_MEM_off = addr;
+            wb_MEM_len = 1;
+            wb_MEM_val = (uint64_t)(get_reg(rs2)&0xff);
+            printf("\tsb %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+        }
+        if(func3 == 1)//sh
+        {
+            ctrl_wb_MEM = true;
+            wb_MEM_off = addr;
+            wb_MEM_len = 2;
+            wb_MEM_val = (uint64_t)(get_reg(rs2)&0xffff);
+            printf("\tsh %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+        }
+        if(func3 == 2)//sw
+        {
+            ctrl_wb_MEM = true;
+            wb_MEM_off = addr;
+            wb_MEM_len = 4;
+            wb_MEM_val = (uint64_t)(get_reg(rs2)&0xffffffff);
+            printf("\tsw %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+        }
+        if(func3 == 3)//sd
+        {
+            ctrl_wb_MEM = true;
+            wb_MEM_off = addr;
+            wb_MEM_len = 8;
+            wb_MEM_val = (uint64_t)get_reg(rs2);
+            printf("\tsh %s,%d(%s):0x%x",regnames[rs2],off,regnames[rs1],addr);
+        }
+    }    
     else if(opcode == OPCODE_SB)
     {
         int func3 = get_funct3(inst);
@@ -292,37 +342,37 @@ int decode_excute(INSTR inst)
         int off = get_imm_sb(inst);
         if(func3 == 0X0)//beq
         {
-            if(regs[rs1] == regs[rs2])
+            if(get_reg(rs1) == get_reg(rs2))
                 PC_NEXT = off + PC - 4;
             printf("\tbeq %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X1)//bne
         {
-            if(regs[rs1] != regs[rs2])
+            if(get_reg(rs1) != get_reg(rs2))
                 PC_NEXT = off + PC - 4;
             printf("\tbne %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X4)//blt
         {
-            if(regs[rs1] < regs[rs2])
+            if(get_reg(rs2) < get_reg(rs2))
                 PC_NEXT = off + PC - 4;
             printf("\tblt %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X5)//bge
         {
-            if(regs[rs1] >= regs[rs2])
+            if(get_reg(rs1) >= get_reg(rs2))
                 PC_NEXT = off + PC - 4;
             printf("\tbge %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X6)//bltu
         {
-            if((uint64_t)(regs[rs1]) < (uint64_t)(regs[rs2]))
+            if((uint64_t)(get_reg(rs1)) < (uint64_t)(get_reg(rs2)))
                 PC_NEXT = off + PC - 4;
             printf("\tbltu %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }
         else if(func3 == 0X7)//bgeu
         {
-            if((uint64_t)(regs[rs1]) >= (uint64_t)(regs[rs2]))
+            if((uint64_t)(get_reg(rs1)) >= (uint64_t)(get_reg(rs2)))
                 PC_NEXT = off + PC - 4;
             printf("\tbltu %s,%s,0x%x",regnames[rs1],regnames[rs2],off);
         }

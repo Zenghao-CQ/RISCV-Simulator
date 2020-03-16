@@ -16,8 +16,9 @@ extern bool ctrl_BUBBLE_DI;//if branch predict is wrong, in di
 extern bool ctrl_BUBBLE_WB;//if branch predict is wrong, in wb
 extern int wb_REG_No;
 extern int wb_MEM_off;
-REG wb_REG_val;
-REG wb_MEM_val;
+extern int wb_MEM_len;
+int64_t wb_REG_val;
+uint64_t wb_MEM_val;//no sign extend
 
 /***intitial state***/
 extern void inti();

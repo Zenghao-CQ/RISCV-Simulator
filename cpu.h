@@ -23,8 +23,8 @@
 //register
 #define REG_NUM 32 
 typedef int32_t INSTR;//!!imm need sign extend
-typedef int64_t REG;
-extern REG regs[REG_NUM];//all register but xo
+//typedef int64_t REG;
+extern int64_t regs[REG_NUM];//all register but xo
 extern char regnames[32][5];
 
 //memory

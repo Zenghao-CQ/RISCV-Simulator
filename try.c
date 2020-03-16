@@ -4,7 +4,7 @@
 #define to_uint64(a) *((int32_t*)&a)
 int main()
 {
-    int8_t a[3]={1,2,3};
-    int16_t b = *((int16_t *) (&a[0]));
-    printf("%x\n",b);
+    uint32_t a = 0xffffffff;
+    uint32_t b = a>>1;
+    printf("%ux\n",b);
 }
