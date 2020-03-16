@@ -17,6 +17,7 @@ void print_main_code()
         else
         {
             printf("%x: %08x\n",addr,IR);
+            PC = addr + 4;
             decode_excute(IR);
         }
     }

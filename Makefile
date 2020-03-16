@@ -1,6 +1,9 @@
 riscv: main.o cpu.o elf.o pipline.o
 	cc -o riscv cpu.o elf.o pipline.o main.o
 
+syscall.o: syscall.c syscall.h cpu.h
+	cc -c syscall.c
+
 main.o: main.c pipline.h elf.h cpu.h
 	cc -c main.c
 

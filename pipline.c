@@ -1,5 +1,6 @@
 #include"pipline.h"
 #include"cpu.h"
+#include"syscall.h"
 #include<string.h>
 
 /***hardware***/
@@ -450,20 +451,47 @@ int decode_excute(INSTR inst)
     }
     else if(opcode == OPCODE_I_4)//jalr
     {
-        int rd = get_rd(inst);
-        int rs1 = get_rs1(inst);
-        int imm = get_imm_i(inst);
-        //set PC
-        PC_NEXT = (get_reg(rs1) + imm)&0xfffffffe;
-        //set rd
-        ctrl_wb_REG = true;
-        wb_REG_No = rd;
-        wb_REG_val = PC;//!!!when decode PC point to next instrct
-        //bubble
-        //ctrl_BUBBLE_DI = true;
-        //ctrl_BUBBLE_WB = true;
-        printf("\tjalr %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+        int func3 = get_funct3(inst);
+        if(func3 == 0x0)
+        {
+            int rd = get_rd(inst);
+            int rs1 = get_rs1(inst);
+            int imm = get_imm_i(inst);
+            //set PC
+            PC_NEXT = (get_reg(rs1) + imm)&0xfffffffe;
+            //set rd
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = PC;//!!!when decode PC point to next instrct
+            //bubble
+            //ctrl_BUBBLE_DI = true;
+            //ctrl_BUBBLE_WB = true;
+            printf("\tjalr %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+        }
+        else
+        {
+            printf("\t!!!ERROR CODE in opcode_i_4\n");
+            return -1;
+        }
+        
     }
+    else if(opcode == OPCODE_I_5)
+    {
+        int func3 = get_funct3(inst);
+        int func7 = get_funct7(inst);
+        if(func3 == 0x0 && func7 == 0x0)
+        {
+            int ra0 = get_reg(10);
+            syscall(ra0);
+            printf("\tecall a0=%d",ra0);
+        }
+        else
+        {
+            printf("\t!!!ERROR CODE in opcode_i_5\n");
+            return -1;
+        }        
+    }
+    
     else if(opcode == OPCODE_U_1)//auipc
     {
         int rd = get_rd(inst);
@@ -495,7 +523,7 @@ int decode_excute(INSTR inst)
         //bubble
         //ctrl_BUBBLE_DI = true;
         //ctrl_BUBBLE_WB = true;
-        printf("\tjal %s,%x:0x%x\n",regnames[rd],imm,PC_NEXT);//!!not val in dump
+        printf("\tjal %s,0x%x:0x%x\n",regnames[rd],imm,PC_NEXT);//!!not val in dump
     }
     else if(opcode == OPCODE_S)//!!no sign extend
     {
