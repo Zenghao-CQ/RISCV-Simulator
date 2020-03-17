@@ -25,6 +25,7 @@ extern void init();
 /***laod to memory from file***/
 extern int load_memory(char* filname);
 extern void print_all_REGS();
+extern int print_memory(int off,int len);
 /***exculte part***/
 
 extern int fetch_instr();//into IR

@@ -486,7 +486,7 @@ int decode_excute(INSTR inst)
         if(func3 == 0x0 && func7 == 0x0)
         {
             int ra0 = get_reg(10);
-            printf("\tecall a0=%d",ra0);
+            printf("\tecall a0=%d\n",ra0);
             syscall(ra0);
         }
         else
@@ -687,4 +687,44 @@ void print_all_REGS()
     {
        printf("%s %d:0x%lx = %ld\n",regnames[i],i,regs[i],regs[i]);
     }    
+}
+int print_memory(int off,int len)
+{
+    if(wb_MEM_off > MEM_SIZE)
+    {
+    printf("***read memory false: offset out of size!\n");
+        return -2;
+    }   
+    int val;
+    printf("Memory content:\n");
+    if(len == 1)//sb
+    {
+        int8_t* into = (int8_t *) &memory[off];
+        val = *into;
+        printf("%02x\n",val);
+    }
+    else if(len == 2)//sh
+    {
+        int16_t* into = (int16_t *) &memory[off];
+        val = *into;
+        printf("%04x\n",val);
+    }
+    else if(len == 4)//sw
+    {
+        int32_t* into = (int32_t *) &memory[off];
+        val = *into;
+        printf("%08x\n",val);
+    }
+    else if(len == 8)//sd
+    {
+        int64_t* into = (int64_t *) &memory[off];
+        val = *into;
+        printf("%016x\n",val);
+    }
+    else
+    {
+        printf("***fead memory false: length iligal!\n");
+        return -1;
+    }
+    return 0;
 }

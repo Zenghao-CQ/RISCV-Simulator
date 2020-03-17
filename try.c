@@ -1,12 +1,17 @@
 #include<stdio.h>
 #include<stdint.h>
+#include<string.h>
 
 #define to_uint64(a) *((int32_t*)&a)
 int main()
 {
-    int64_t a = 0xfffffffff - 2 , b = 1;
-    int64_t c = a+b;
-    int t = c;
-    int64_t d = t;
-    printf("%llx %x %llx\n",c,t,d);
+    char buff[20];
+    while(1)
+    {
+        scanf("%s",buff);
+        if(strcmp(buff,"")==0)
+            printf("empty\n");
+        else
+            printf("echo %s\n",buff);
+    }
 }

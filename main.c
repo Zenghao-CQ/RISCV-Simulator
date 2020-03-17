@@ -25,36 +25,76 @@ void print_main_code()
 /*
     run simulaotr
 */
-int main()
+#ifdef SINGLE
+int main(int argc, char* argv[])
 {
-    if(load_memory("./add")!=0)
+    if(argc != 2)
     {
-        printf("\n***Load memory false!\n");
+        printf("No file input!\n");
+        return -1;
+    }
+    char* filename = argv[1];
+    if(load_memory(filename)!=0)
+    {
+        printf("***Load memory false!\n");
         return -1;
     }
     init();
+    bool GO = false;
     while (PC != endmain)
     {
+        while (!GO)
+        {            
+            char type;
+            scanf("%c",&type);
+            getchar();
+            if(type == 'r')
+            {
+                print_all_REGS();
+            }
+            else if(type == 'm')
+            {
+                int off,len;
+                scanf("%d %d",&off,&len);
+                getchar();
+                print_memory(off,len);
+            }
+            else if(type == 'c')
+            {
+                break;
+            }
+            else if(type == 'g')
+            {
+                GO = true;
+                break;
+            }            
+            else
+            {
+                printf("%c no such command!\n",type);
+            }            
+        }
+        
+
         ctrl_wb_REG = false;
         ctrl_wb_MEM = false;
-        //print_all_REGS();
         if(fetch_instr()!=0) 
         {
-            printf("\n***fetch instruction false!\n");
+            printf("***fetch instruction false!\n");
             return -1;  
         }
         PC += 4;//!! in decode pC point to next PC
         if(decode_excute(IR)!=0)
         {
-            printf("\n***decode and excute false!\n");
+            printf("***decode and excute false!\n");
             return -1; 
         }
         PC -= 4;//!! recover PC from decode(when pipline PC point to next instrucion)
         if(write_back()!=0)
         {
-            printf("\n***write back false!\n");
+            printf("***write back false!\n");
             return -1; 
         }
     }
-    
+    return 0;    
 }
+#endif //SINGLE
