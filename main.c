@@ -27,6 +27,6 @@ void print_main_code()
 */
 int main()
 {
-    load_memory("./add");
+    load_memory("./padd");
     print_main_code();    
 }

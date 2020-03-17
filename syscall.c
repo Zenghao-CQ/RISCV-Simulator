@@ -1,5 +1,6 @@
+#include"syscall.h"
 int syscall(int no)
 {
-    printf("###sycall received!\n");
+    printf("###sycall No:%d received!\n",no);
     return 0;
 }
