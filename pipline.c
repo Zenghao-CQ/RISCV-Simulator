@@ -56,8 +56,10 @@ void init()
     ctrl_wb_MEM = false;
     ctrl_wb_REG = false;
     //!!this is importent cause in 1st cycle pipline is empty
-    //ctrl_BUBBLE_DI = true;
-    //ctrl_BUBBLE_WB = true;
+    #ifndef SINGLE // dont write and decode at first
+    ctrl_BUBBLE_DI = true;
+    ctrl_BUBBLE_WB = true;
+    #endif
 }
 int load_memory(char * filename)
 {
@@ -86,7 +88,6 @@ int load_memory(char * filename)
 /***stage 1,fetch intruction from mem,will never bubble***/
 int fetch_instr()//addr of bytes
 {
-    //printf("\n%x,%x\n",PC,PC_NEXT);
     PC = PC_NEXT;//!!test version, should use later
     if(PC%4!=0)//iligal addr
     {
@@ -96,18 +97,21 @@ int fetch_instr()//addr of bytes
     IR = *((INSTR*) (memory + PC));
     //!!need modify when bubble later
     PC_NEXT = PC+4;
-    //printf("\n%x,%x\n",PC,PC_NEXT);
+    printf("###fetch instruction at 0x%08x\n",PC);
     return 0;
 }
 int decode_excute(INSTR inst)
 {
-    //if(ctrl_BUBBLE_DI == true)
-    //{
-    //    ctrl_BUBBLE_DI = false;
-    //    ctrl_BUBBLE_WB = true;//!!import
-    //    return -2;//mean last instr is jump
-    //}
-    printf("instruction: 0x%08x at 0x%x\n",inst,PC-4);
+    #ifndef SINGLE
+    if(ctrl_BUBBLE_DI == true)
+    {
+        ctrl_BUBBLE_DI = false;
+        ctrl_BUBBLE_WB = true;//!!import
+        printf("###decode&excute bubbled\n");
+        return 0;//mean last instr is jump
+    }
+    #endif
+    printf("Decode&excute instruction: 0x%08x at 0x%x\n",inst,PC-4);
     INSTR opcode = get_opcode(inst);
     printf("\topcode: 0x%x",opcode);
 
@@ -627,9 +631,17 @@ int decode_excute(INSTR inst)
 }
 int write_back()
 {
+    #ifndef SINGLE
+    if(ctrl_BUBBLE_WB == true)
+    {
+        printf("###write back bubble!\n");
+        ctrl_BUBBLE_WB = false;
+        return 0;
+    }
+    #endif
     if(ctrl_wb_MEM == true)
     {
-        printf("write back memory off = %d,val = %ld, len = %d\n",wb_MEM_off,wb_MEM_val,wb_MEM_len);
+        printf("###write back memory off = %d,val = %ld, len = %d\n",wb_MEM_off,wb_MEM_val,wb_MEM_len);
         if(wb_MEM_off > MEM_SIZE)
         {
             printf("***write back false: offset out of size!\n");
@@ -675,7 +687,7 @@ int write_back()
             printf("***write back false: REG No %d doesnt exist!\n",wb_REG_No);
             return -1;
         }
-        printf("write back register no = %d,val = %ld = %lx\n",wb_REG_No,wb_REG_val,wb_REG_val);
+        printf("###write back register no = %d,val = %ld = %lx\n",wb_REG_No,wb_REG_val,wb_REG_val);
         regs[wb_REG_No] = wb_REG_val;
     }
     return 0;

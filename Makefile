@@ -1,5 +1,5 @@
-CFALG += -DSINGLE
-
+#CFALG = -DSINGLE
+CFLAG = 
 riscv: main.o cpu.o elf.o pipline.o syscall.o
 	cc -o riscv cpu.o elf.o pipline.o main.o syscall.o
 
