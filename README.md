@@ -9,7 +9,7 @@
 >>'r'(rigisters) print all rigisters  \
 >>'g'(go) keep running untill end of "main" section  \
 >>'m'(memory) print memory. Type as fomat "offset width", width will be ilegal except 1,2,4,8 Bytes
->>2. **Pipline**: set ```CFLAGS = ``` and make
+>>2. **Pipeline**: set ```CFLAGS = FAKE_PIPE``` and make
 
 >To run this project, you need:\
 >```make```\

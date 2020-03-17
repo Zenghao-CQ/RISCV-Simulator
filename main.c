@@ -1,7 +1,7 @@
 #include"cpu.h"
 #include"elf.h"
 #include"pipline.h"
-
+#define FAKE_PIPE
 /*
     for load memory test, we just excute "main" section\
     cause other section contain 16Byte code
@@ -95,9 +95,11 @@ int main(int argc, char* argv[])
             return -1; 
         }
     }
+    printf("Simulate success!\n"):
     return 0;    
 }
-#else //SINGLE
+#endif //SINGLE
+#ifdef FAKE_PIPE //SINGLE
 int main(int argc, char* argv[])
 {
     if(argc != 2)
@@ -153,6 +155,8 @@ int main(int argc, char* argv[])
             return -1; 
         }
     //
+    printf("Simulate success!\n");
+    printf("Cycle number:%d",cyclenum);
     return 0;    
 }
-#endif //SINGLE
+#endif//FAKE_PIPE
