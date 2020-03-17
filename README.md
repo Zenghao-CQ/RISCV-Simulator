@@ -4,7 +4,7 @@
 >Temporarily the  project do not support interrupt including **syscal** and **Link library**
 
 >There 2 modes you can choose:
->>1. **Single Step**:  set ```CFLAGS = -DSINGLE``` in Makefile and make. the commands are as follow:
+>>1. **Single Step**:  set ```CFLAGS = -DSINGLE``` in Makefile and make. the commands are as follow:  \
 >>'c'(continue) run one instruction  \
 >>'r'(rigisters) print all rigisters  \
 >>'g'(go) keep running untill end of "main" section  \
