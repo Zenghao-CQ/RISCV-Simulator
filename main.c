@@ -27,6 +27,34 @@ void print_main_code()
 */
 int main()
 {
-    load_memory("./padd");
-    print_main_code();    
+    if(load_memory("./add")!=0)
+    {
+        printf("\n***Load memory false!\n");
+        return -1;
+    }
+    init();
+    while (PC != endmain)
+    {
+        ctrl_wb_REG = false;
+        ctrl_wb_MEM = false;
+        //print_all_REGS();
+        if(fetch_instr()!=0) 
+        {
+            printf("\n***fetch instruction false!\n");
+            return -1;  
+        }
+        PC += 4;//!! in decode pC point to next PC
+        if(decode_excute(IR)!=0)
+        {
+            printf("\n***decode and excute false!\n");
+            return -1; 
+        }
+        PC -= 4;//!! recover PC from decode(when pipline PC point to next instrucion)
+        if(write_back()!=0)
+        {
+            printf("\n***write back false!\n");
+            return -1; 
+        }
+    }
+    
 }

@@ -21,13 +21,13 @@ int64_t wb_REG_val;
 uint64_t wb_MEM_val;//no sign extend
 
 /***intitial state***/
-extern void inti();
+extern void init();
 /***laod to memory from file***/
 extern int load_memory(char* filname);
-
+extern void print_all_REGS();
 /***exculte part***/
 
-extern int fetch_instr(int PC);//into IR
+extern int fetch_instr();//into IR
 extern int decode_excute(INSTR inst);//frome IR
 extern int write_back();
 #endif //PIPLINE

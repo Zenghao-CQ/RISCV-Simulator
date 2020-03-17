@@ -39,7 +39,8 @@ int64_t get_double(int addr)
 }
 int64_t get_reg(int no)
 {
-    if(no = 0)
+    //printf("%%%red reg %d\n",no);
+    if(no == 0)
         return 0;
     else
         return regs[no];
@@ -47,7 +48,7 @@ int64_t get_reg(int no)
 /***exculte part***/
 void init()
 {
-    PC = madr;//inital PC start from "main"
+    PC = PC_NEXT = madr;//inital PC start from "main"
     END = endmain;//end of "main"
     regs[3] = gp;
     regs[2] = MEM_SIZE/2;
@@ -62,13 +63,13 @@ int load_memory(char * filename)
 {
     if (read_elf(filename) != 0)
     {
-        printf("\n###Read ELF error\n");
+        printf("\n***Read ELF error\n");
         return -1;
     }
     FILE* excu_file = fopen(filename,"r");
     if(code_vadr + code_size >= MEM_SIZE || data_vadr + data_size > MEM_SIZE)
     {
-        printf("\n###Out of memry size!\n");
+        printf("\n***Out of memry size!\n");
         return -2;
     }
     memset(memory,0,sizeof(memory));
@@ -79,21 +80,23 @@ int load_memory(char * filename)
     fread(&memory[data_vadr],1,data_size,excu_file);//load data segment
     
     fclose(excu_file);
-    printf("\n###load memory success!\n");
+    printf("\n***load memory success!\n");
     return 0;
 }
 /***stage 1,fetch intruction from mem,will never bubble***/
-int fetch_instr(int PC)//addr of bytes
+int fetch_instr()//addr of bytes
 {
-    //PC = PC_NEXT;//!!test version, should use later
+    //printf("\n%x,%x\n",PC,PC_NEXT);
+    PC = PC_NEXT;//!!test version, should use later
     if(PC%4!=0)//iligal addr
     {
-        printf("\n###invalid PC\n");
+        printf("\n***invalid PC\n");
         return -1;
     }
     IR = *((INSTR*) (memory + PC));
     //!!need modify when bubble later
     PC_NEXT = PC+4;
+    //printf("\n%x,%x\n",PC,PC_NEXT);
     return 0;
 }
 int decode_excute(INSTR inst)
@@ -104,7 +107,7 @@ int decode_excute(INSTR inst)
     //    ctrl_BUBBLE_WB = true;//!!import
     //    return -2;//mean last instr is jump
     //}
-    printf("instruction: 0x%08x\n",inst);
+    printf("instruction: 0x%08x at 0x%x\n",inst,PC-4);
     INSTR opcode = get_opcode(inst);
     printf("\topcode: 0x%x",opcode);
 
@@ -343,7 +346,8 @@ int decode_excute(INSTR inst)
             ctrl_wb_REG =true;
             wb_REG_No = rd;
             wb_REG_val = get_reg(rs1) + imm;
-            printf("\taddi %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
+            printf("\taddi %s,%s,%ld,\n",regnames[rd],regnames[rs1],imm);
+            //printf("\t %d,%d,%d shit",get_reg(rs1),imm,wb_REG_val);
         }
         else if(func3 == 0x1)//slli
         {
@@ -482,8 +486,8 @@ int decode_excute(INSTR inst)
         if(func3 == 0x0 && func7 == 0x0)
         {
             int ra0 = get_reg(10);
-            syscall(ra0);
             printf("\tecall a0=%d",ra0);
+            syscall(ra0);
         }
         else
         {
@@ -555,6 +559,7 @@ int decode_excute(INSTR inst)
             wb_MEM_len = 4;
             wb_MEM_val = (uint64_t)(get_reg(rs2)&0xffffffff);
             printf("\tsw %s,%d(%s):0x%lx\n",regnames[rs2],off,regnames[rs1],addr);
+            //printf("%d,%d,%d",get_reg(rs2),get_reg(rs1), off);
         }
         if(func3 == 3)//sd
         {
@@ -575,37 +580,37 @@ int decode_excute(INSTR inst)
         {
             if(get_reg(rs1) == get_reg(rs2))
                 PC_NEXT = off + PC - 4;
-            printf("\tbeq %s,%s,%d\n",regnames[rs1],regnames[rs2],off);
+            printf("\tbeq %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X1)//bne
         {
             if(get_reg(rs1) != get_reg(rs2))
                 PC_NEXT = off + PC - 4;
-            printf("\tbne %s,%s,%d\n",regnames[rs1],regnames[rs2],off);
+            printf("\tbne %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X4)//blt
         {
             if(get_reg(rs2) < get_reg(rs2))
                 PC_NEXT = off + PC - 4;
-            printf("\tblt %s,%s,%d\n",regnames[rs1],regnames[rs2],off);
+            printf("\tblt %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off, off + PC - 4);
         }
         else if(func3 == 0X5)//bge
         {
             if(get_reg(rs1) >= get_reg(rs2))
                 PC_NEXT = off + PC - 4;
-            printf("\tbge %s,%s,%d\n",regnames[rs1],regnames[rs2],off);
+            printf("\tbge %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X6)//bltu
         {
             if((uint64_t)(get_reg(rs1)) < (uint64_t)(get_reg(rs2)))
                 PC_NEXT = off + PC - 4;
-            printf("\tbltu %s,%s,%d\n",regnames[rs1],regnames[rs2],off);
+            printf("\tbltu %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X7)//bgeu
         {
             if((uint64_t)(get_reg(rs1)) >= (uint64_t)(get_reg(rs2)))
                 PC_NEXT = off + PC - 4;
-            printf("\tbltu %s,%s,%d\n",regnames[rs1],regnames[rs2],off);
+            printf("\tbltu %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else
         {
@@ -622,5 +627,64 @@ int decode_excute(INSTR inst)
 }
 int write_back()
 {
-
+    if(ctrl_wb_MEM == true)
+    {
+        printf("write back memory off = %d,val = %ld, len = %d\n",wb_MEM_off,wb_MEM_val,wb_MEM_len);
+        if(wb_MEM_off > MEM_SIZE)
+        {
+            printf("***write back false: offset out of size!\n");
+            return -2;
+        }   
+        if(wb_MEM_len == 1)//sb
+        {
+            int8_t tmp = wb_MEM_val;
+            int8_t* into = (int8_t *) &memory[wb_MEM_off];
+            *into = tmp;
+        }
+        else if(wb_MEM_len == 2)//sh
+        {
+            int16_t tmp = wb_MEM_val;
+            int16_t* into = (int16_t *) &memory[wb_MEM_off];
+            *into = tmp;
+        }
+        else if(wb_MEM_len == 4)//sw
+        {
+            int32_t tmp = wb_MEM_val;
+            int32_t* into = (int32_t *) &memory[wb_MEM_off];
+            *into = tmp;
+        }
+        else if(wb_MEM_len == 8)//sd
+        {
+            int64_t tmp = wb_MEM_val;
+            int64_t* into = (int64_t *) &memory[wb_MEM_off];
+            *into = tmp;
+        }
+        else
+        {
+            printf("***write back false: length iligal!\n");
+            return -1;
+        }
+        
+    }
+    if(ctrl_wb_REG == true)
+    {
+        if(wb_REG_No == 0)
+            return 0;
+        if(wb_REG_No > REG_NUM)
+        {
+            printf("***write back false: REG No %d doesnt exist!\n",wb_REG_No);
+            return -1;
+        }
+        printf("write back register no = %d,val = %ld = %lx\n",wb_REG_No,wb_REG_val,wb_REG_val);
+        regs[wb_REG_No] = wb_REG_val;
+    }
+    return 0;
+}
+void print_all_REGS()
+{
+    printf("REG values:\n");
+    for (int i = 0; i < REG_NUM; i++)
+    {
+       printf("%s %d:0x%lx = %ld\n",regnames[i],i,regs[i],regs[i]);
+    }    
 }
