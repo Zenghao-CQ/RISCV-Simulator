@@ -1,5 +1,5 @@
 #CFLAG = -DSINGLE
-CFLAG = -DFAKE_PIPE
+CFLAG = -DPIPE
 riscv: main.o cpu.o elf.o pipline.o syscall.o
 	cc -o riscv cpu.o elf.o pipline.o main.o syscall.o
 

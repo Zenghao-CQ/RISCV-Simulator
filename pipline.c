@@ -20,26 +20,59 @@ uint64_t wb_MEM_val;
 bool ctrl_BUBBLE_DI;//if branch predict is wrong
 bool ctrl_BUBBLE_WB;//if branch predict is wrong
 
+bool ctrl_read_REG;
+bool ctrl_read_MEM;
+int read_REG_No;
+int read_MEM_off;
+int read_MEM_len;//bytes length
+#ifdef PIPE
+bool data_conflict;
+bool control_conflict;
+#endif
 /***load memrory\reg***/
 int8_t get_byte(int addr)
 {
+#ifdef PIPE
+    ctrl_read_MEM =true;
+    read_MEM_len = 1;
+    read_MEM_off = addr;
+#endif //PIPE
     return (int8_t)memory[addr];
 }
 int16_t get_half(int addr)
 {
+#ifdef PIPE
+    ctrl_read_MEM =true;
+    read_MEM_len = 2;
+    read_MEM_off = addr;
+#endif //PIPE
     return *((int16_t *) (&memory[addr]));
 }
 int32_t get_word(int addr)
 {
+#ifdef PIPE
+    ctrl_read_MEM =true;
+    read_MEM_len = 4;
+    read_MEM_off = addr;
+#endif //PIPE
     return *((int32_t *) (&memory[addr]));
 }
 int64_t get_double(int addr)
 {
+#ifdef PIPE
+    ctrl_read_MEM =true;
+    read_MEM_len = 8;
+    read_MEM_off = addr;
+#endif //PIPE
     return *((int64_t *) (&memory[addr]));
 }
 int64_t get_reg(int no)
 {
     //printf("%%%red reg %d\n",no);
+#ifdef PIPE
+    ctrl_read_REG =true;
+    read_REG_No = no;
+#endif //PIPE
     if(no == 0)
         return 0;
     else
@@ -48,7 +81,8 @@ int64_t get_reg(int no)
 /***exculte part***/
 void init()
 {
-    PC = PC_NEXT = madr;//inital PC start from "main"
+    PC = madr - 4;//avoid false control conflict at first 
+    PC_NEXT = madr;//inital PC start from "main"
     END = endmain;//end of "main"
     regs[3] = gp;
     regs[2] = MEM_SIZE/2;
@@ -59,6 +93,10 @@ void init()
     #ifndef SINGLE // dont write and decode at first
     ctrl_BUBBLE_DI = true;
     ctrl_BUBBLE_WB = true;
+    #endif
+    #ifdef PIPE 
+    control_conflict = false;
+    data_conflict = false;
     #endif
 }
 int load_memory(char * filename)
@@ -88,6 +126,12 @@ int load_memory(char * filename)
 /***stage 1,fetch intruction from mem,will never bubble***/
 int fetch_instr()//addr of bytes
 {
+    #ifdef PIPE
+    if(control_conflict == true)
+    {
+        //printf("###fetch instruction bubbled ctrl\n");
+    }
+    #endif
     PC = PC_NEXT;//!!test version, should use later
     if(PC%4!=0)//iligal addr
     {
@@ -107,8 +151,14 @@ int decode_excute(INSTR inst)
     {
         ctrl_BUBBLE_DI = false;
         ctrl_BUBBLE_WB = true;//!!import
-        printf("###decode&excute bubbled\n");
+        //printf("###decode&excute bubbled\n");
         return 0;//mean last instr is jump
+    }
+    #endif
+    #ifdef PIPE
+    if(control_conflict == true)
+    {
+        //printf("###decode&excute bubbled\n");
     }
     #endif
     printf("Decode&excute instruction: 0x%08x at 0x%x\n",inst,PC-4);
@@ -470,7 +520,8 @@ int decode_excute(INSTR inst)
             //set rd
             ctrl_wb_REG = true;
             wb_REG_No = rd;
-            wb_REG_val = PC;//!!!when decode PC point to next instrct
+            //wb_REG_val = PC;//!!!when decode PC point to next instrct
+            wb_REG_val = PC + 4;//!!!when decode PC point to next instrct
             //bubble
             //ctrl_BUBBLE_DI = true;
             //ctrl_BUBBLE_WB = true;
@@ -506,7 +557,8 @@ int decode_excute(INSTR inst)
         int64_t off = get_imm_u(inst);
         ctrl_wb_REG = true;
         wb_REG_No = rd;
-        wb_REG_val = (int64_t)PC - 4 + off;//its not right,next PC is =4? no jump
+        //wb_REG_val = (int64_t)PC - 4 + off;//its not right,next PC is =4? no jump
+        wb_REG_val = (int64_t)PC  + off;//its not right,next PC is =4? no jump
         printf("\tauipc %s,0x%lx\n",regnames[rd],off>>12);
     }
     else if(opcode ==  OPCODE_U_2)//lui
@@ -523,11 +575,13 @@ int decode_excute(INSTR inst)
         int rd = get_rd(inst);
         int imm = (int64_t)get_imm_uj(inst);
         //set PC
-        PC_NEXT = PC - 4 + imm;//!!!when decode PC point to next instrct
+        //PC_NEXT = PC - 4 + imm;//!!!when decode PC point to next instrct
+        PC_NEXT = PC + imm;
         //set rd
         ctrl_wb_REG = true;
         wb_REG_No = rd;
-        wb_REG_val = PC;//!!!when decode PC point to next instrct
+        //wb_REG_val = PC;//!!!when decode PC point to next instrct
+        wb_REG_val = PC + 4;
         //bubble
         //ctrl_BUBBLE_DI = true;
         //ctrl_BUBBLE_WB = true;
@@ -583,37 +637,37 @@ int decode_excute(INSTR inst)
         if(func3 == 0X0)//beq
         {
             if(get_reg(rs1) == get_reg(rs2))
-                PC_NEXT = off + PC - 4;
+                PC_NEXT = off + PC;
             printf("\tbeq %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X1)//bne
         {
             if(get_reg(rs1) != get_reg(rs2))
-                PC_NEXT = off + PC - 4;
+                PC_NEXT = off + PC;
             printf("\tbne %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X4)//blt
         {
             if(get_reg(rs2) < get_reg(rs2))
-                PC_NEXT = off + PC - 4;
+                PC_NEXT = off + PC;
             printf("\tblt %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off, off + PC - 4);
         }
         else if(func3 == 0X5)//bge
         {
             if(get_reg(rs1) >= get_reg(rs2))
-                PC_NEXT = off + PC - 4;
+                PC_NEXT = off + PC;
             printf("\tbge %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X6)//bltu
         {
             if((uint64_t)(get_reg(rs1)) < (uint64_t)(get_reg(rs2)))
-                PC_NEXT = off + PC - 4;
+                PC_NEXT = off + PC;
             printf("\tbltu %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else if(func3 == 0X7)//bgeu
         {
             if((uint64_t)(get_reg(rs1)) >= (uint64_t)(get_reg(rs2)))
-                PC_NEXT = off + PC - 4;
+                PC_NEXT = off + PC;
             printf("\tbltu %s,%s,%d at 0x%d\n",regnames[rs1],regnames[rs2],off,off + PC - 4);
         }
         else
@@ -631,10 +685,16 @@ int decode_excute(INSTR inst)
 }
 int write_back()
 {
+    #ifdef PIPE
+    if(data_conflict == true)
+    {
+        //printf("###write back bubble! data\n");
+    }
+    #endif
     #ifndef SINGLE
     if(ctrl_BUBBLE_WB == true)
     {
-        printf("###write back bubble!\n");
+        //printf("###write back bubble!\n");
         ctrl_BUBBLE_WB = false;
         return 0;
     }

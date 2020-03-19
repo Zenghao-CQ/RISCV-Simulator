@@ -10,7 +10,10 @@
 >>'g'(go) keep running untill end of "main" section  \
 >>'m'(memory) print memory. Type as fomat "offset width", width will be ilegal except 1,2,4,8 Bytes
 >
->>2. **Pipeline**: set ```CFLAG = -DFAKE_PIPE``` and make
+>>2. **Pipeline**: set ```CFLAG = -DPIPE``` and make
+
+>The RISCV program is compiled by [RISC-V Tools](https://github.com/riscv/riscv-tools), you can use following command to compile: \
+>```riscv64-unkown-elf-gcc -Wa,march=rv64i -o filename filename.c```
 
 >To run this project, you need:\
 >```make```\

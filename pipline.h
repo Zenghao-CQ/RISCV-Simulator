@@ -17,6 +17,16 @@ extern bool ctrl_BUBBLE_WB;//if branch predict is wrong, in wb
 extern int wb_REG_No;
 extern int wb_MEM_off;
 extern int wb_MEM_len;
+
+extern bool ctrl_read_REG;
+extern bool ctrl_read_MEM;
+extern int read_REG_No;
+extern int read_MEM_off;
+extern int read_MEM_len;
+#ifdef PIPE
+extern bool data_conflict;
+extern bool control_conflict;
+#endif
 int64_t wb_REG_val;
 uint64_t wb_MEM_val;//no sign extend
 
