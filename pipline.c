@@ -531,6 +531,20 @@ int decode_excute(INSTR inst)
             wb_REG_val = (int64_t)tmp;//signextend
             printf("\tsrliw %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
+        else if(func3 == 0x1 && (func7>>1) == 0x0)//slliw
+        {
+            int rd = get_rd(inst);
+            int rs1 = get_rs1(inst);
+            int imm = (int)((get_imm_i(inst)) & 0x1f);//5 bits
+
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            int32_t tmp = (int32_t)(get_reg(rs1));//alg shift in32 bit
+            tmp = tmp << imm;
+
+            wb_REG_val = (int64_t)tmp;//sign extend
+            printf("\tslliw %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+      }
         else
         {
             printf("\t!!!ERROR CODE in opcode_i_3\n");

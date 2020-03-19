@@ -129,6 +129,8 @@ int main(int argc, char* argv[])//if jal or brach,
     init();
     int cyclenum = 0;
     int val_instr = 0;
+    int data_con = 0;
+    int ctrl_con = 0;
 
     while (PC != endmain)
     {      
@@ -161,11 +163,13 @@ int main(int argc, char* argv[])//if jal or brach,
         //if data conflict
         if(old_ctrl_wb_REG == true && ctrl_read_REG == true && old_wb_REG_No == read_REG_No)
         {
+            data_con++;
             cyclenum++;
             data_conflict = true;
         }
         if(PC_NEXT != PC + 4)
         {
+            ctrl_con++;
             cyclenum++;
             control_conflict = true;
         }
@@ -192,6 +196,8 @@ int main(int argc, char* argv[])//if jal or brach,
     printf("Simulate success!\n");
     printf("Cycle number:%d\n",cyclenum);
     printf("Instruction number:%d\n",val_instr);
+    printf("Data confilict:%d\n",data_con);
+    printf("Control confilict:%d\n",ctrl_con);
     
     return 0;    
 }
