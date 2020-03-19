@@ -1,7 +1,6 @@
 #include"cpu.h"
 #include"elf.h"
 #include"pipline.h"
-#define FAKE_PIPE
 /*
     for load memory test, we just excute "main" section\
     cause other section contain 16Byte code
@@ -95,11 +94,12 @@ int main(int argc, char* argv[])
             return -1; 
         }
     }
-    printf("Simulate success!\n"):
+    printf("Simulate success!\n");
     return 0;    
 }
 #endif //SINGLE
-#ifdef FAKE_PIPE //SINGLE
+
+#ifdef FAKE_PIPE 
 int main(int argc, char* argv[])
 {
     if(argc != 2)
@@ -156,7 +156,68 @@ int main(int argc, char* argv[])
         }
     //
     printf("Simulate success!\n");
-    printf("Cycle number:%d",cyclenum);
+    printf("Cycle number:%d\n",cyclenum);
     return 0;    
 }
 #endif//FAKE_PIPE
+#ifdef PIPE
+int main(int argc, char* argv[])//if jal or brach, 
+{
+    if(argc != 2)
+    {
+        printf("No file input!\n");
+        return -1;
+    }
+    char* filename = argv[1];
+    if(load_memory(filename)!=0)
+    {
+        printf("***Load memory false!\n");
+        return -1;
+    }
+    init();
+    bool GO = false;
+    int cyclenum = 0;
+    while (PC != endmain)
+    {      
+        cyclenum++;
+        //if(cyclenum>20)
+        //    return 0;
+        ctrl_wb_REG = false;
+        ctrl_wb_MEM = false;
+        if(fetch_instr()!=0) 
+        {
+            printf("***fetch instruction false!\n");
+            return -1;  
+        }
+        //PC += 4;//!! in decode pC point to next PC
+        if(decode_excute(IR)!=0)
+        {
+            printf("***decode and excute false!\n");
+            return -1; 
+        }
+        //PC -= 4;//!! recover PC from decode(when pipline PC point to next instrucion)
+        if(write_back()!=0)
+        {
+            printf("***write back false!\n");
+            return -1; 
+        }
+    }
+    //last instruction
+    PC+=4;
+    if(decode_excute(IR)!=0)
+        {
+            printf("***decode and excute false!\n");
+            return -1; 
+        }
+    PC-=4;
+    if(write_back()!=0)
+        {
+            printf("***write back false!\n");
+            return -1; 
+        }
+    //
+    printf("Simulate success!\n");
+    printf("Cycle number:%d\n",cyclenum);
+    return 0;    
+}
+#endif //PIPE
