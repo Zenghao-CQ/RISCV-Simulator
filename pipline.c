@@ -488,6 +488,8 @@ int decode_excute(INSTR inst)
     else if(opcode == OPCODE_I_3)
     {
         int func3 = get_funct3(inst);
+        int func7 = get_funct7(inst);
+        printf("!!!!!shit %x,%x",func3,func7);
         if(func3 == 0x0)//addiw
         {
             int rd = get_rd(inst);
@@ -500,6 +502,34 @@ int decode_excute(INSTR inst)
             wb_REG_No = rd;
             wb_REG_val = ans;
             printf("\taddiw %s,%s,%ld\n",regnames[rd],regnames[rs1],imm);
+        }
+        else if(func3 == 0x5 && (func7>>1) == 0x10)//sraiw
+        {
+            int rd = get_rd(inst);
+            int rs1 = get_rs1(inst);
+            int imm = (int)((get_imm_i(inst)) & 0x1f);//5 bits
+
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            int32_t tmp = (int32_t)(get_reg(rs1));//alg shift in32 bit
+            tmp = tmp >> imm;
+
+            wb_REG_val = (int64_t)tmp;//sign extend
+            printf("\tsraiw %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
+        }
+        else if(func3 == 0x5 && (func7>>1) == 0x0)//srliw
+        {
+            int rd = get_rd(inst);
+            int rs1 = get_rs1(inst);
+            int imm = (int)((get_imm_i(inst)) & 0x1f);;
+
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            uint32_t tmp = (uint32_t)(get_reg(rs1));//logic shift
+
+            tmp = tmp >> imm;
+            wb_REG_val = (int64_t)tmp;//signextend
+            printf("\tsrliw %s,%s,%d\n",regnames[rd],regnames[rs1],imm);
         }
         else
         {
@@ -673,6 +703,50 @@ int decode_excute(INSTR inst)
         else
         {
             printf("\t!!!ERROR CODE in opcode_sb,func3=0x%x\n",func3);
+            return -1;
+        }
+    }
+    else if(opcode == OPCODE_W)
+    {
+        int func3 = get_funct3(inst);
+        int func7 = get_funct7(inst);
+        int rs1 = get_rs1(inst);
+        int rs2 = get_rs2(inst);
+        int rd = get_rd(inst);
+        if(func3 == 0 && func7 == 0)//addw
+        {
+            int64_t ans = get_reg(rs1)+get_reg(rs2);
+            int32_t tmp = ans;//32bit
+            ans = tmp;//sign extend
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = ans;
+            printf("\taddw %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]);
+            
+        }
+        else if(func3 == 0 && func7 == 0x1)//mulw
+        {
+            int64_t ans = get_reg(rs1) * get_reg(rs2);
+            int32_t tmp = ans;//32bit
+            ans = tmp;//sign extend
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = ans;
+            printf("\tmulw %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]); 
+        }
+        else if(func3 == 0 && func7 == 0x20)//subw
+        {
+            int64_t ans = get_reg(rs1) - get_reg(rs2);
+            int32_t tmp = ans;//32bit
+            ans = tmp;//sign extend
+            ctrl_wb_REG = true;
+            wb_REG_No = rd;
+            wb_REG_val = ans;
+            printf("\tmultw %s,%s,%s\n",regnames[rd],regnames[rs1],regnames[rs2]); 
+        }
+        else
+        {
+            printf("\t!!!ERROR CODE in opcode_W,func3=0x%x,func7=0x%x\n",func3,func7);
             return -1;
         }
     }

@@ -19,6 +19,7 @@
 #define OPCODE_U_1 0x17 //U
 #define OPCODE_U_2 0x37
 #define OPCODE_UJ 0x6f //UJ
+#define OPCODE_W 0x3b
 
 //register
 #define REG_NUM 32 
