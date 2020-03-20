@@ -167,6 +167,14 @@ int main(int argc, char* argv[])//if jal or brach,
             cyclenum++;
             data_conflict = true;
         }
+        if(old_ctrl_wb_MEM && ctrl_read_MEM && 
+            !((read_MEM_off + read_MEM_len < old_wb_MEM_off) || (old_wb_MEM_off + old_wb_MEM_len < read_MEM_off))
+            )
+        {
+            data_con++;
+            cyclenum++;
+            data_conflict = true;
+        }
         if(PC_NEXT != PC + 4)
         {
             ctrl_con++;
