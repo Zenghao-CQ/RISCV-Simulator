@@ -39,13 +39,13 @@ int main(int argc, char* argv[])
         printf("***Load memory false!\n");
         return -1;
     }
-    int cycnum = 0;
+    int cyclenum = 0;
     int val_instr = 0;
     init();
     bool GO = false;
     while (PC != endmain)
     {
-        cycnum += 3;
+        cyclenum += 3;
         val_instr++;
         while (!GO)
         {            
